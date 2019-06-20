@@ -1,0 +1,258 @@
+API DOC
+
+[PART 1: 需求]
+该控件为MKN0的主网络控件, 包含: ma_xhelper.aar、ma_xutils.aar、ma_encrypts.aar 三个主体包
+其中ma_xhelper.aar为主框架, ma_xutils.aar、ma_encrypts.aar为辅助框架, 其关系如下:
+
+                |---- ma_xutils
+ma_xhelper ---- |
+                |---- ma_encrypts
+                
+ma_xhelper  : 主体框架, 由外部人员使用的SDK
+ma_xutils   : 网络支持, 使用改良后的xutils3进行支持, 不再使用github的原生xutils
+ma_encrypts : 加密支持, 与项目服务器需求关联的加密算法, 提供请求参数sign\timestamp\newtoken
+
+[PART 2: 控件属性]
+属性主要存放于Xhelper.java的文件中, 其属性包括如下:
+public static String BASE_URL;          // 基础地址: 初始化必须设置,如"https://www.alcatel-move.com"
+public static String KEY;               // API_KEY: 初始化必须设置, 如"alkfj093fsdf"
+public static String ACCESS_TOKEN;      // TOKEN: 登陆后必须设置
+public static String UID;               // 用户UID: 登陆后必须设置
+public static String LANGUAGE;          // 语言: 初始化设置, 如"en"
+public static boolean PRINT_TAG;        // 是否打印框架日志: 如框架流程, 返回值等
+public static boolean PRINT_HEAD;       // 是否打印头部参数信息
+public static boolean PRINT_PROGRESS;   // 是否打印进度
+private static final int TIMEOUT;       // 超时时间: 不可改, 默认30秒
+private Object object;                  // 请求参数对象: 调用方法
+private String secUrl;                  // 接口地址: 配合基础地址拼接使用, 如:"/V1.0/login"
+
+[PART 3: 方法]
+    <Method>
+    public Xhelper<T> xUrl(String secUrl);                                          // 设置接口地址, "/V1.0/login", 上传与下载无需调用该方法
+    public Xhelper<T> xParam(@Nullable Object object);                              // 设置请求参数, Loginbean等;如不需传参, 该方法不调用
+    public void xGet(XNormalListener<T> listener);                                  // 调用GET方式, @listener: 请求回调
+    public void xPost(XNormalListener<T> listener);                                 // 调用POST方式, @listener: 请求回调
+    public void xPut(XNormalListener<T> listener);                                  // 调用PUT方式, @listener: 请求回调
+    public void xDelete(XNormalListener<T> listener);                               // 调用DELETE方式, @listener: 请求回调
+    public void xPatch(XNormalListener<T> listener);                                // 调用PATCH方式, @listener: 请求回调
+    public void xHead(XNormalListener<T> listener);                                 // 调用HEAD方式, @listener: 请求回调
+    public void xOptions(XNormalListener<T> listener);                              // 调用OPTIONS方式, @listener: 请求回调
+    public void xTrace(XNormalListener<T> listener);                                // 调用TRACE方式, @listener: 请求回调
+    public void xConnect(XNormalListener<T> listener);                              // 调用CONNECT方式, @listener: 请求回调
+    public void uploadImage(File file, XTransferListener listener);                 // 上传图片, @File:文件对象; @listener:请求回调
+    public void downFile(String fid, String path, XTransferListener listener);      // 下载文件, @fid:文件ID; @path:aaa.jpg(带后缀); @listener:请求回调
+
+    <监听器>
+    XNormalListener<T>  : 普通请求回调, 需指定泛型
+    XTransferListener   : 上传与下载回调
+
+[PART 4: 使用]
+4.1.导入ma_xhelper.aar、ma_xutils.aar、ma_encrypts.aar 三个主体包到工程的libs里
+
+4.2.gradle.project里添加flatDir内容
+allprojects {
+    repositories {
+        flatDir {
+            dirs project(':$你的工程模块名$').file('libs')
+        }
+    }
+}
+
+4.3.gradle.module主模块下配置
+    api 'com.android.support:appcompat-v7:28.0.0'
+    api 'com.android.support:support-v4:28.0.0'
+    api 'com.alibaba:fastjson:1.2.54'
+    api 'com.alibaba:fastjson:1.1.70.android'
+    api (name: 'ma_xhelper', ext: 'aar')
+    api (name: 'ma_xutils', ext: 'aar')
+    api (name: 'ma_encrypts', ext: 'aar')
+
+4.4.application里初始化xutils
+    x.Ext.init(this);
+
+4.5.创建对象并进行链式调用
+
+    <普通请求: 有实体返回: 需要制定泛型>
+    Xhelper<$响应实体> xhelper = new Xhelper<$响应实体>().xUrl("$接口地址");
+    xhelper.xParam($请求参数).xPost(new XNormalListener<$响应实体>() {
+    
+                @Override
+                public void successByValue($响应实体 bean) {
+                    // 请求成功并且有json返回 (有实体返回情况在此处回调)
+                }
+    
+                @Override
+                public void successNoValue() {
+                    // 请求成功但没有实例json返回(无实体返回情况在此处回调)
+                }
+    
+                @Override
+                public void appError(Throwable ex) {
+                    // APP错误, 如错误的链接
+                }
+    
+                @Override
+                public void serverError(ServerError error) {
+                    // 服务器返回错误, 如密码错误
+                }
+    
+                @Override
+                public void cancel(Callback.CancelledException cex) {
+                    // 取消请求
+                }
+    
+                @Override
+                public void finish() {
+                    // 请求结束
+                }
+    });
+    
+    <普通请求: 无实体返回: 无需传递泛型>
+    Xhelper xhelper = new Xhelper().xUrl("$接口地址");
+    xhelper.xParam($请求参数).xPost(new XNormalListener() {
+    
+                @Override
+                public void successByValue($响应实体 bean) {
+                    // 请求成功并且有json返回 (有实体返回情况在此处回调)
+                }
+    
+                @Override
+                public void successNoValue() {
+                    // 请求成功但没有实例json返回 (无实体返回情况在此处回调)
+                }
+    
+                @Override
+                public void appError(Throwable ex) {
+                    // APP错误, 如错误的链接
+                }
+    
+                @Override
+                public void serverError(ServerError error) {
+                    // 服务器返回错误, 如密码错误
+                }
+    
+                @Override
+                public void cancel(Callback.CancelledException cex) {
+                    // 取消请求
+                }
+    
+                @Override
+                public void finish() {
+                    // 请求结束
+                }
+    });
+    
+    <上传图片: 无需传递泛型与接口地址>
+    Xhelper xhelper = new Xhelper();
+    xhelper.uploadImage($你的file, new XTransferListener() {
+        @Override
+        public void waiting() {
+            // 请求等待
+        }
+    
+        @Override
+        public void start() {
+            // 请求开始
+        }
+    
+        @Override
+        public void loading(long total, long current, boolean isDownloading) {
+            // 正在上传
+            @total:文件总大小; 
+            @current:已上传大小; 
+            @isDownloading: 是否正在传输;
+        }   
+    
+        @Override
+        public void success(String fid) {
+            // 上传成功 (仅在上传操作中才有回调)
+            @fid: 上传成功后返回的文件ID
+        }
+    
+        @Override
+        public void success(File file) {
+            // 下载成功 (仅在下载操作中才有回调)
+            @file: 下载的文件对象
+        }
+    
+        @Override
+        public void appError(Throwable ex) {
+            // APP错误, 如错误的链接
+        }
+        
+        @Override
+        public void serverError(ServerError error) {
+            // 服务器返回错误, 如密码错误
+        }
+        
+        @Override
+        public void cancel(Callback.CancelledException cex) {
+            // 取消请求
+        }
+        
+        @Override
+        public void finish() {
+            // 请求结束
+        }
+    });
+    
+    <下载文件: 无需传递泛型与接口地址>
+    Xhelper xhelper = new Xhelper();
+    xhelper.downFile("$文件ID", "$下载后的保存路径(含后缀名)", new XTransferListener() {
+        @Override
+        public void waiting() {
+            // 请求等待
+        }
+    
+        @Override
+        public void start() {
+            // 请求开始
+        }
+    
+        @Override
+        public void loading(long total, long current, boolean isDownloading) {
+            // 正在下载
+            @total:文件总大小; 
+            @current:已下载大小; 
+            @isDownloading: 是否正在传输;
+        }   
+    
+        @Override
+        public void success(String fid) {
+            // 上传成功 (仅在上传操作中才有回调)
+            @fid: 上传成功后返回的文件ID
+        }
+    
+        @Override
+        public void success(File file) {
+            // 下载成功 (仅在下载操作中才有回调)
+            @file: 下载的文件对象
+        }
+    
+        @Override
+        public void appError(Throwable ex) {
+            // APP错误, 如错误的链接
+        }
+        
+        @Override
+        public void serverError(ServerError error) {
+            // 服务器返回错误, 如密码错误
+        }
+        
+        @Override
+        public void cancel(Callback.CancelledException cex) {
+            // 取消请求
+        }
+        
+        @Override
+        public void finish() {
+            // 请求结束
+        }
+    });    
+    
+
+[PART 5: 注意事项]
+1. 第4.1 ~ 4.3的步骤必须严格遵守执行.
+2. 上传音频使用的是普通请求, 上传与下载分别使用各自的请求方法
+3. 本module仅提供初级框架, 业务框架建议开发人员进行二次封装
+
