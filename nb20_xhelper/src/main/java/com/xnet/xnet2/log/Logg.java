@@ -16,6 +16,7 @@ public class Logg {
     private static int LOG_FLAG = SHOW_ALL;/* 日志开关 */
     private static String tag;
     private static Logg logs;
+    private static Thread logThread;// 写出日志的线程
 
     public Logg() {
     }
@@ -97,4 +98,45 @@ public class Logg {
         }
     }
 
+    /**
+     * 开启线程记录(在APPLICATION:ONCREATE中使用)
+     */
+    public static void startRecordLog() {
+        if (logThread == null) {
+            logThread = new LogThread();
+            logThread.start();
+        }
+    }
+
+    /**
+     * 停止线程记录(在退出APP:ONDESTROY使用)
+     */
+    public static void stopRecordLog() {
+        if (logThread != null) {
+            // 先停止循环, 再中断线程
+            LogThread.killLoop();
+            logThread.interrupt();
+            logThread = null;
+        }
+    }
+
+    /**
+     * 写入SD卡
+     *
+     * @param content 待写入的内容
+     */
+    public static void writeToSD(String content) {
+        if (logThread != null) {
+            LogThread.addContentToList(content);
+        }
+    }
+
+    /**
+     * 在首次安装首次运行首次登陆时启用
+     */
+    public static void createdLogDir() {
+        if (logThread != null) {
+            LogThread.createdLogDirOut();
+        }
+    }
 }

@@ -7,6 +7,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.tcl.token.ndk.ServerEncrypt;
 import com.xnet.xnet2.bean.Fidbean;
+import com.xnet.xnet2.bean.Logbean;
 import com.xnet.xnet2.impl.XNormalCallback;
 import com.xnet.xnet2.impl.XTransferCallback;
 import com.xnet.xnet2.listener.XBaseListener;
@@ -151,6 +152,9 @@ public class Xhelper<T> {
     private Callback.Cancelable downCancelable;
     private Callback.Cancelable fotaCancelable;
 
+    // 日志json临时缓存
+    private String tempParamJson = "";
+
     /* -------------------------------------------- public -------------------------------------------- */
 
     public Xhelper() {
@@ -279,6 +283,17 @@ public class Xhelper<T> {
      * @param listener 响应回调
      */
     private void request(int type, final XNormalCallback<T> listener) {
+        // 判断当前请求的接口是否为登陆接口(首次使用) -- 是: 创建日志文件夹
+        if (this.secUrl.contains("account/login")) {
+            Logg.createdLogDir();
+        }
+        // 创建日志对象
+        Logbean logbean = new Logbean();
+        logbean.setUrl(secUrl);
+
+        // TOAT: 2019/11/19 0019  测试: 是否能写入并追加
+        // Logg.writeToSD("test write log..." + System.currentTimeMillis() + "..." + secUrl + "\n");
+
         printNormal("prepare to request params");
         printHead();
         // 1.请求参数
@@ -298,16 +313,21 @@ public class Xhelper<T> {
          * 如果请求的结果带有具体的实体参数, 则服务器返回对应的实参json {"aaa": 0, "bbb": "demo"}
          * 因此只有服务器返回具体实体参数时, 才需要进行json转换
          * */
+        HttpMethod finalHttpMethod = httpMethod;
         requestCancelable = x.http().request(httpMethod, params, new Callback.CommonCallback<String>() {
 
             @Override
             public void responseBody(UriRequest uriRequest) {
+                // 打印
                 printUriRequest(uriRequest);
                 listener.getUriRequest(uriRequest);
             }
 
             @Override
             public void onSuccess(String result) {
+                // 封装日志对象
+                logbean.setResponceCode(String.valueOf("200"));// code
+                logbean.setResponceBody(result);// body
                 printResponseSuccess(result);
 
                 if (isXmlOther) {// 是否为XML等其他格式
@@ -332,11 +352,15 @@ public class Xhelper<T> {
 
             @Override
             public void onError(Throwable ex, boolean isOnCallback) {
+                logbean.setResponceCode(String.valueOf("404"));// code
+                logbean.setError(ex.getMessage());// error
                 handleError(ex, listener);
             }
 
             @Override
             public void onCancelled(CancelledException cex) {
+                logbean.setResponceCode(String.valueOf("403"));// code
+                logbean.setCancel(cex.getMessage());// cancel
                 listener.cancel(cex);
                 printCancel(cex);
             }
@@ -346,9 +370,36 @@ public class Xhelper<T> {
                 cancelList.remove(requestCancelable);
                 listener.finish();
                 printFinish();
+                // 把日志写出去(#ma#{..})
+                // String content = "#ma#" + JSONObject.toJSONString(logbean);
+                logbean.setRequestMethod(finalHttpMethod.toString());// method
+                logbean.setRequestParam(params.toJSONString());// param
+                Logg.writeToSD(mergeLog(logbean));
             }
         });
         cancelList.add(requestCancelable);
+    }
+
+    /**
+     * 拼接成python能解析的字符串
+     *
+     * @param logbean 日志对象
+     * @return 字符
+     */
+    private String mergeLog(Logbean logbean) {
+        StringBuffer buffer = new StringBuffer();
+        // {'url':'xxxxxx',.....}
+        buffer.append("#ma#{");
+        buffer.append("\'").append("date").append("\'").append(":").append("\'").append(System.currentTimeMillis() / 1000).append("\'").append(",");
+        buffer.append("\'").append("url").append("\'").append(":").append("\'").append(logbean.getUrl()).append("\'").append(",");
+        buffer.append("\'").append("requestMethod").append("\'").append(":").append("\'").append(logbean.getRequestMethod()).append("\'").append(",");
+        buffer.append("\'").append("responceCode").append("\'").append(":").append("\'").append(logbean.getResponceCode()).append("\'").append(",");
+        buffer.append("\'").append("responceBody").append("\'").append(":").append("\'").append(logbean.getResponceBody()).append("\'").append(",");
+        buffer.append("\'").append("requestParam").append("\'").append(":").append("\'").append(tempParamJson).append("\'").append(",");
+        buffer.append("\'").append("error").append("\'").append(":").append("\'").append(logbean.getError()).append("\'").append(",");
+        buffer.append("\'").append("cancel").append("\'").append(":").append("\'").append(logbean.getCancel()).append("\'");
+        buffer.append("}");
+        return buffer.toString();
     }
 
     /**
@@ -397,6 +448,10 @@ public class Xhelper<T> {
      * @param url fota服务器地址
      */
     public void fotaUpgrade(String url, XFotaListener listener) {
+        // 创建日志对象
+        Logbean logbean = new Logbean();
+        logbean.setUrl(url);
+
         printNormal("prepare to request params");
         printHead();
         RequestParams fotaParams = getFotaParams(url);
@@ -410,6 +465,10 @@ public class Xhelper<T> {
 
             @Override
             public void onSuccess(String result) {
+                // 封装日志对象
+                logbean.setResponceBody(result);// body
+                logbean.setResponceCode(String.valueOf("200"));// code
+
                 printResponseSuccess(result);
                 listener.trippleSuccess(result);
                 printNormal(result);
@@ -417,12 +476,16 @@ public class Xhelper<T> {
 
             @Override
             public void onError(Throwable ex, boolean b) {
+                logbean.setResponceCode(String.valueOf("404"));// code
+                logbean.setError(ex.getMessage());// error
                 listener.appError(ex);
                 printAppError(ex);
             }
 
             @Override
             public void onCancelled(CancelledException cex) {
+                logbean.setResponceCode(String.valueOf("403"));// code
+                logbean.setCancel(cex.getMessage());// cancel
                 listener.cancel(cex);
                 printCancel(cex);
             }
@@ -432,6 +495,9 @@ public class Xhelper<T> {
                 cancelList.remove(fotaCancelable);
                 listener.finish();
                 printFinish();
+                logbean.setRequestMethod("GET");// method
+                logbean.setRequestParam(fotaParams.toJSONString());// param
+                Logg.writeToSD(mergeLog(logbean));
             }
         });
         cancelList.add(fotaCancelable);
@@ -446,6 +512,10 @@ public class Xhelper<T> {
      * @param listener 回调监听
      */
     public void uploadImage(String url, File file, XTransferCallback listener) {
+        // 创建日志对象
+        Logbean logbean = new Logbean();
+        logbean.setUrl(url);
+
         printNormal("prepare to request params");
         printHead();
         RequestParams imageParams = getImageParams(url, file);// 准备参数 (如"/v1.0/fs?type=image&duration=0")
@@ -481,6 +551,8 @@ public class Xhelper<T> {
 
             @Override
             public void onSuccess(String result) {
+                logbean.setResponceBody(result);// body
+                logbean.setResponceCode(String.valueOf("200"));// code
                 if (result.contains("fid")) {
                     String fid = JSON.parseObject(result, Fidbean.class).getFid();
                     listener.success(fid);
@@ -492,11 +564,14 @@ public class Xhelper<T> {
 
             @Override
             public void onError(Throwable ex, boolean isOnCallback) {
+                logbean.setResponceCode(String.valueOf("404"));// code
+                logbean.setError(ex.getMessage());// error
                 handleError(ex, listener);
             }
 
             @Override
             public void onCancelled(CancelledException cex) {
+                logbean.setResponceCode(String.valueOf("403"));// code
                 listener.cancel(cex);
                 printCancel(cex);
             }
@@ -506,6 +581,9 @@ public class Xhelper<T> {
                 cancelList.remove(uploadCancelable);
                 listener.finish();
                 printFinish();
+                logbean.setRequestMethod("POST");// method
+                logbean.setRequestParam(imageParams.toJSONString());// param
+                Logg.writeToSD(mergeLog(logbean));
             }
         });
         cancelList.add(uploadCancelable);
@@ -520,6 +598,10 @@ public class Xhelper<T> {
      * @param listener 下载监听
      */
     public void downFile(String url, String fid, String savePath, XTransferCallback listener) {
+        // 创建日志对象
+        Logbean logbean = new Logbean();
+        logbean.setUrl(url);
+
         printNormal("prepare to request params");
         printHead();
         RequestParams downParam = getDownParam(url, fid, savePath);// 准备参数(如"/v1.0/fs/")
@@ -554,17 +636,23 @@ public class Xhelper<T> {
 
             @Override
             public void onSuccess(File file) {
+                logbean.setResponceBody(file.getName());// body
+                logbean.setResponceCode(String.valueOf("200"));// code
                 listener.success(file);
                 printNormal("download success, the [file path] is : " + file.getAbsolutePath());
             }
 
             @Override
             public void onError(Throwable ex, boolean isOnCallback) {
+                logbean.setResponceCode(String.valueOf("404"));// code
+                logbean.setError(ex.getMessage());// error
                 handleError(ex, listener);
             }
 
             @Override
             public void onCancelled(CancelledException cex) {
+                logbean.setResponceCode(String.valueOf("403"));// code
+                logbean.setCancel(cex.getMessage());// cancel
                 listener.cancel(cex);
                 printCancel(cex);
             }
@@ -574,6 +662,9 @@ public class Xhelper<T> {
                 cancelList.remove(downCancelable);
                 listener.finish();
                 printFinish();
+                logbean.setRequestMethod("GET");// method
+                logbean.setRequestParam(downParam.toJSONString());// param
+                Logg.writeToSD(mergeLog(logbean));
             }
         });
         cancelList.add(downCancelable);
@@ -603,6 +694,7 @@ public class Xhelper<T> {
                 requestParams.setAsJsonContent(true);
                 String contentJson = JSON.toJSONString(object);
                 requestParams.setBodyContent(contentJson);
+                tempParamJson = contentJson;// 此处为了日志打印, 写出本地时需要用到 tempParamJson
                 if (PRINT_HEAD) {
                     printRequestJson(contentJson);
                 }
@@ -614,6 +706,7 @@ public class Xhelper<T> {
                     requestParams.addBodyParameter(key, value);
                     builder.append(key).append(" = ").append(value);
                 }
+                tempParamJson = builder.toString();// 此处为了日志打印, 写出本地时需要用到 tempParamJson
                 printNormal(builder.toString());
             }
         }
@@ -643,6 +736,7 @@ public class Xhelper<T> {
             requestParams.setAsJsonContent(true);
             String contentJson = JSON.toJSONString(object);
             requestParams.setBodyContent(contentJson);
+            tempParamJson = contentJson;// 此处为了日志打印, 写出本地时需要用到 tempParamJson
             if (PRINT_HEAD) {
                 printRequestJson(contentJson);
             }
@@ -671,6 +765,7 @@ public class Xhelper<T> {
         requestParams.addHeader("User-Agent", android.os.Build.MANUFACTURER + "-" + android.os.Build.MODEL);
         // 参数
         requestParams.addBodyParameter("file", file);
+        tempParamJson = "upload param is file:" + file.getName();// 此处为了日志打印, 写出本地时需要用到 tempParamJson
         requestParams.setMultipart(true);/* 这一句必须要加才能上传成功 */
         return requestParams;
     }
@@ -697,6 +792,7 @@ public class Xhelper<T> {
         requestParams.addHeader("User-Agent", android.os.Build.MANUFACTURER + "-" + android.os.Build.MODEL);
         // 保存路径
         requestParams.setSaveFilePath(savePath);
+        tempParamJson = "download param savepath is :" + savePath;// 此处为了日志打印, 写出本地时需要用到 tempParamJson
         return requestParams;
     }
 
