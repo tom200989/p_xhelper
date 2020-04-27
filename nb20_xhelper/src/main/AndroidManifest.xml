@@ -1,11 +1,17 @@
 <manifest
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.xnet.xnet2">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    
+
+    <!-- 适配Android Q -->
+    <application
+        android:requestLegacyExternalStorage="true"
+        tools:targetApi="29" />
+
 </manifest>
 
 

@@ -1,7 +1,10 @@
 package com.xnet.xnet2.log;
 
 import android.annotation.SuppressLint;
+import android.os.Build;
 import android.os.Environment;
+
+import com.xnet.xnet2.core.Xhelper;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -12,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 /*
  * Created by qianli.ma on 2019/11/19 0019.
@@ -53,7 +57,13 @@ public class LogThread extends Thread {
             try {
                 /* 定义LOG文件的格式: sdcard/applications/log/159289121238798 */
                 // 3.查询文件夹是否存在
-                String appsPath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/applications";
+                String appsPath;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    appsPath = Objects.requireNonNull(Xhelper.context.getExternalFilesDir(null)).getAbsolutePath() + "/applications";
+                } else {
+                    appsPath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/applications";
+                }
+
                 File appFile = new File(appsPath);
                 // 4.如果［applications］文件夹不存在 -- 创建
                 if (!appFile.exists() || !appFile.isDirectory()) {
