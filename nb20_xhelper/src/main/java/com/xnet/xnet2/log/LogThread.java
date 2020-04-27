@@ -1,10 +1,9 @@
 package com.xnet.xnet2.log;
 
 import android.annotation.SuppressLint;
-import android.os.Build;
-import android.os.Environment;
+import android.content.Context;
 
-import com.xnet.xnet2.core.Xhelper;
+import com.xnet.xnet2.utils.OtherUtils;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -15,7 +14,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
 
 /*
  * Created by qianli.ma on 2019/11/19 0019.
@@ -25,12 +23,14 @@ public class LogThread extends Thread {
     // 日志集合
     public static List<String> logList = new ArrayList<>();
     // 日志文件夹
-    private String logDirPath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/applications/log";
+    private static String logRootName = "/applications";
+    private static String logDirName = "log";
+    private static String logPathName = logRootName + "/" + logDirName;
     // 循环控制标记
     private static boolean loopFlag = true;
 
     public LogThread() {
-        createdLogDirOut();
+        createdLogDirOut(Logg.context);
     }
 
     /**
@@ -52,25 +52,19 @@ public class LogThread extends Thread {
     /**
      * 外部主动创建文件夹
      */
-    public static void createdLogDirOut() {
+    public static void createdLogDirOut(Context context) {
         synchronized (Object.class) {
             try {
                 /* 定义LOG文件的格式: sdcard/applications/log/159289121238798 */
                 // 3.查询文件夹是否存在
-                String appsPath;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    appsPath = Objects.requireNonNull(Xhelper.context.getExternalFilesDir(null)).getAbsolutePath() + "/applications";
-                } else {
-                    appsPath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/applications";
-                }
-
+                String appsPath = OtherUtils.get_android_Q_SD_Path(context, logRootName);
                 File appFile = new File(appsPath);
                 // 4.如果［applications］文件夹不存在 -- 创建
                 if (!appFile.exists() || !appFile.isDirectory()) {
                     // 4.1.创建 applications 目录
                     appFile.mkdir();
                     // 4.2.再创建 log 目录
-                    File logFile = new File(appFile, "log");
+                    File logFile = new File(appFile, logDirName);
                     logFile.mkdir();
                 } else {
                     // 4.如果［applications］文件夹存在
@@ -79,7 +73,7 @@ public class LogThread extends Thread {
                     boolean isLogDirExists = false;// 检查Log文件夹是否存在
                     for (File tempF : files) {
                         // 4.1.并且找到了log文件夹
-                        if (tempF.isDirectory() & tempF.getName().contains("log")) {
+                        if (tempF.isDirectory() & tempF.getName().contains(logDirName)) {
                             isLogDirExists = true;
                             // 4.2.遍历并删除7天前的文件
                             File[] logFiles = tempF.listFiles();
@@ -106,7 +100,7 @@ public class LogThread extends Thread {
                     }
                     // 判断最终是否没有LOG文件夹 -- 无:创建
                     if (!isLogDirExists) {
-                        File logFile = new File(appFile, "log");
+                        File logFile = new File(appFile, logDirName);
                         logFile.mkdir();
                     }
                 }
@@ -150,8 +144,9 @@ public class LogThread extends Thread {
      */
     @SuppressLint("UseSparseArrays")
     private File getNeedFile() {
+
         try {
-            File logDir = new File(logDirPath);
+            File logDir = new File(OtherUtils.get_android_Q_SD_Path(Logg.context, logPathName));
             File[] files = logDir.listFiles();
             if (files.length > 0) {
                 HashMap<Long, File> logMap = new HashMap<>();

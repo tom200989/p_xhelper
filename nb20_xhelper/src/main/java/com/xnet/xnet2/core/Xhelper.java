@@ -1,6 +1,5 @@
 package com.xnet.xnet2.core;
 
-import android.content.Context;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 
@@ -154,16 +153,11 @@ public class Xhelper<T> {
     private Callback.Cancelable fotaCancelable;
 
     // 日志json临时缓存
-    public static Context context;
     private String tempParamJson = "";
 
     /* -------------------------------------------- public -------------------------------------------- */
 
     public Xhelper() {
-        if (context == null) {
-            Logg.t(TAG).ee("强制需要传入context以适配Android Q");
-            return;
-        }
         lgg = Logg.t(TAG).openClose(PRINT_TAG);
     }
 
