@@ -729,7 +729,7 @@ public class Xhelper<T> {
         // 基本信息
         requestParams.setConnectTimeout(TIMEOUT);
         // 头部信息
-        requestParams.addHeader("Authorization", getAuthorization());
+        // requestParams.addHeader("Authorization", getAuthorization());
         requestParams.addHeader("Content-Type", "application/json");
         requestParams.addHeader("Accept-Language", LANGUAGE);
         requestParams.addHeader("User-Agent", android.os.Build.MANUFACTURER + "-" + android.os.Build.MODEL);
