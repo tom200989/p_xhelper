@@ -18,7 +18,7 @@ public class Logg {
     private static String tag;
     private static Logg logs;
     private static Thread logThread;// 写出日志的线程
-    public static Context context;// 用于兼容android Q
+    public static Context context;// 用于兼容android Q - 在application进行初始化
 
     public Logg() {
     }

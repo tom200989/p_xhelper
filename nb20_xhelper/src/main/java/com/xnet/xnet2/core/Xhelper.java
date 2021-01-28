@@ -320,9 +320,14 @@ public class Xhelper<T> {
 
             @Override
             public void responseBody(UriRequest uriRequest) {
-                // 打印
-                printUriRequest(uriRequest);
-                listener.getUriRequest(uriRequest);
+                try {
+                    // 打印
+                    printUriRequest(uriRequest);
+                    listener.getUriRequest(uriRequest);
+                    logbean.setResponceCode(String.valueOf(uriRequest.getResponseCode()));// code
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
 
             @Override
@@ -354,14 +359,14 @@ public class Xhelper<T> {
 
             @Override
             public void onError(Throwable ex, boolean isOnCallback) {
-                logbean.setResponceCode(String.valueOf("404"));// code
+                // logbean.setResponceCode(String.valueOf("404"));// code
                 logbean.setError(ex.getMessage());// error
                 handleError(ex, listener);
             }
 
             @Override
             public void onCancelled(CancelledException cex) {
-                logbean.setResponceCode(String.valueOf("403"));// code
+                // logbean.setResponceCode(String.valueOf("403"));// code
                 logbean.setCancel(cex.getMessage());// cancel
                 listener.cancel(cex);
                 printCancel(cex);
@@ -461,8 +466,13 @@ public class Xhelper<T> {
         fotaCancelable = x.http().get(fotaParams, new Callback.CommonCallback<String>() {
             @Override
             public void responseBody(UriRequest uriRequest) {
-                printUriRequest(uriRequest);
-                listener.getUriRequest(uriRequest);
+                try {
+                    printUriRequest(uriRequest);
+                    listener.getUriRequest(uriRequest);
+                    logbean.setResponceCode(String.valueOf(uriRequest.getResponseCode()));// code
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
 
             @Override
@@ -478,7 +488,7 @@ public class Xhelper<T> {
 
             @Override
             public void onError(Throwable ex, boolean b) {
-                logbean.setResponceCode(String.valueOf("404"));// code
+                // logbean.setResponceCode(String.valueOf("404"));// code
                 logbean.setError(ex.getMessage());// error
                 listener.appError(ex);
                 printAppError(ex);
@@ -486,7 +496,7 @@ public class Xhelper<T> {
 
             @Override
             public void onCancelled(CancelledException cex) {
-                logbean.setResponceCode(String.valueOf("403"));// code
+                // logbean.setResponceCode(String.valueOf("403"));// code
                 logbean.setCancel(cex.getMessage());// cancel
                 listener.cancel(cex);
                 printCancel(cex);
@@ -527,8 +537,13 @@ public class Xhelper<T> {
 
             @Override
             public void responseBody(UriRequest uriRequest) {
-                printUriRequest(uriRequest);
-                listener.getUriRequest(uriRequest);
+                try {
+                    printUriRequest(uriRequest);
+                    listener.getUriRequest(uriRequest);
+                    logbean.setResponceCode(String.valueOf(uriRequest.getResponseCode()));// code
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
 
             @Override
@@ -566,14 +581,14 @@ public class Xhelper<T> {
 
             @Override
             public void onError(Throwable ex, boolean isOnCallback) {
-                logbean.setResponceCode(String.valueOf("404"));// code
+                // logbean.setResponceCode(String.valueOf("404"));// code
                 logbean.setError(ex.getMessage());// error
                 handleError(ex, listener);
             }
 
             @Override
             public void onCancelled(CancelledException cex) {
-                logbean.setResponceCode(String.valueOf("403"));// code
+                // logbean.setResponceCode(String.valueOf("403"));// code
                 listener.cancel(cex);
                 printCancel(cex);
             }
@@ -612,8 +627,13 @@ public class Xhelper<T> {
 
             @Override
             public void responseBody(UriRequest uriRequest) {
-                printUriRequest(uriRequest);
-                listener.getUriRequest(uriRequest);
+                try {
+                    printUriRequest(uriRequest);
+                    listener.getUriRequest(uriRequest);
+                    logbean.setResponceCode(String.valueOf(uriRequest.getResponseCode()));// code
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
 
             @Override
@@ -646,14 +666,14 @@ public class Xhelper<T> {
 
             @Override
             public void onError(Throwable ex, boolean isOnCallback) {
-                logbean.setResponceCode(String.valueOf("404"));// code
+                // logbean.setResponceCode(String.valueOf("404"));// code
                 logbean.setError(ex.getMessage());// error
                 handleError(ex, listener);
             }
 
             @Override
             public void onCancelled(CancelledException cex) {
-                logbean.setResponceCode(String.valueOf("403"));// code
+                // logbean.setResponceCode(String.valueOf("403"));// code
                 logbean.setCancel(cex.getMessage());// cancel
                 listener.cancel(cex);
                 printCancel(cex);
