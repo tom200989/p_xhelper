@@ -38,7 +38,7 @@ dependencies {
     api 'com.alibaba:fastjson:1.2.54'
     api 'com.alibaba:fastjson:1.1.70.android'
     api(name: 'ma_xhelper', ext: 'aar')
-    api(name: 'ma_xutils', ext: 'aar')
+    api(name: 'ma_xutils_v1', ext: 'aar')
     api(name: 'ma_encrypts', ext: 'aar')
     api 'org.greenrobot:eventbus:3.1.1'
 }
